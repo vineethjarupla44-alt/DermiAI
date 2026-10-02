@@ -1,0 +1,15 @@
+{
+  "short_name": "DermAI",
+  "name": "DermAI — Clinical Skin AI & Explainability",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0B0F19",
+  "theme_color": "#6366F1",
+  "display": "standalone"
+}
