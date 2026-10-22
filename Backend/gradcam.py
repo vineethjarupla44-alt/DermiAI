@@ -98,7 +98,7 @@ def load_model(model_path: str | Path) -> tuple[tf.keras.Model, str, bool]:
 
 def _preprocess_for_model(img_rgb_uint8: np.ndarray) -> np.ndarray:
     img = cv2.resize(img_rgb_uint8, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA).astype(np.float32)
-    img = tf.keras.applications.efficientnet_v2.preprocess_input(img)  # [-1, 1]
+    img = img / 255.0
     return img
 
 
@@ -144,12 +144,12 @@ def _find_last_conv_layer_name(model: tf.keras.Model) -> str | None:
         return _last_conv_name_cache
 
     for layer in reversed(model.layers):
-        # If the layer is a model itself, recurse into it
+        # If the layer is a model itself, inspect its internal layers
         if isinstance(layer, tf.keras.Model):
-            found = _find_last_conv_layer_name(layer)
-            if found:
-                _last_conv_name_cache = found
-                return found
+            for sub_l in reversed(layer.layers):
+                if isinstance(sub_l, tf.keras.layers.Conv2D):
+                    _last_conv_name_cache = sub_l.name
+                    return sub_l.name
         if isinstance(layer, tf.keras.layers.Conv2D):
             _last_conv_name_cache = layer.name
             return layer.name
@@ -172,9 +172,24 @@ _compiled_head_cam_fn = None
 def _get_base_and_head(model: tf.keras.Model, last_conv_layer_name: str):
     global _base_model_cache, _head_model_cache
     if last_conv_layer_name not in _base_model_cache:
-        last_conv = model.get_layer(last_conv_layer_name)
-        _base_model_cache[last_conv_layer_name] = tf.keras.Model(model.inputs, last_conv.output)
-        _head_model_cache[last_conv_layer_name] = tf.keras.Model(last_conv.output, model.output)
+        submodel_found = False
+        for idx, layer in enumerate(model.layers):
+            if isinstance(layer, tf.keras.Model):
+                # Submodel found (e.g. EfficientNetV2 backbone)
+                base_m = tf.keras.Model(model.inputs, layer(model.inputs))
+                head_in = tf.keras.layers.Input(shape=layer.output_shape[1:])
+                x = head_in
+                for post_l in model.layers[idx + 1:]:
+                    x = post_l(x)
+                head_m = tf.keras.Model(head_in, x)
+                _base_model_cache[last_conv_layer_name] = base_m
+                _head_model_cache[last_conv_layer_name] = head_m
+                submodel_found = True
+                break
+        if not submodel_found:
+            last_conv = model.get_layer(last_conv_layer_name)
+            _base_model_cache[last_conv_layer_name] = tf.keras.Model(model.inputs, last_conv.output)
+            _head_model_cache[last_conv_layer_name] = tf.keras.Model(last_conv.output, model.output)
     return _base_model_cache[last_conv_layer_name], _head_model_cache[last_conv_layer_name]
 
 def _get_compiled_feature_fn(base_m: tf.keras.Model):
@@ -309,6 +324,10 @@ def run_inference(
         prediction_detail = CLASS_DETAILS[prediction_code]
 
     top_indices = np.argsort(scaled_probs)[::-1][:3].tolist()
+    all_probabilities = {
+        CLASS_NAMES[i]: round(float(scaled_probs[i]), 4)
+        for i in range(len(CLASS_NAMES))
+    }
     top3 = [
         {
             "name": CLASS_DETAILS[CLASS_NAMES[index]]["name"],
@@ -322,6 +341,7 @@ def run_inference(
         "prediction": prediction_detail["name"],
         "confidence": round(float(scaled_probs[prediction_index] * 100), 2),
         "top3": top3,
+        "probabilities": all_probabilities,
         "heatmap_img": Image.fromarray(heatmap_overlay),
         "saliency_img": Image.fromarray(saliency_overlay),
         "prediction_code": prediction_code,

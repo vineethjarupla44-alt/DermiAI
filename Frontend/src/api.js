@@ -16,9 +16,33 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Auto-fallback from localhost to 127.0.0.1 in case of IPv6/IPv4 hostname resolution issues
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config
+    if (
+      (!error.response || error.message === 'Network Error') &&
+      config &&
+      !config._retry &&
+      config.baseURL &&
+      config.baseURL.includes('localhost')
+    ) {
+      config._retry = true
+      config.baseURL = config.baseURL.replace('localhost', '127.0.0.1')
+      if (config.url && config.url.includes('localhost')) {
+        config.url = config.url.replace('localhost', '127.0.0.1')
+      }
+      return axios(config)
+    }
+    return Promise.reject(error)
+  }
+)
+
 export function assetUrl(path) {
   if (!path) return ''
-  if (/^https?:\/\//.test(path) || /^data:/.test(path)) return path
+  if (/^https?:\/\//.test(path) || /^data:/.test(path) || /^blob:/.test(path)) return path
+  if (path.startsWith('/samples/')) return path
   return `${API_BASE_URL.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`
 }
 

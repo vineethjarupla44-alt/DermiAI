@@ -45,6 +45,8 @@ candidate_model_paths = []
 if _env_model_path:
     candidate_model_paths.append(Path(_env_model_path) if os.path.isabs(_env_model_path) else (BASE_DIR / _env_model_path).resolve())
 candidate_model_paths.extend([
+    BASE_DIR.parent / "Training" / "my_dermiai_model.keras",
+    BASE_DIR / "my_dermiai_model.keras",
     BASE_DIR / "best_final.keras",
     BASE_DIR.parent / "best_final.keras",
     BASE_DIR / "models" / "best_final.keras",
@@ -106,14 +108,15 @@ app.add_middleware(
 async def unhandled_exception_handler(request: Request, exc: Exception):
     import traceback
     traceback.print_exc()
-    origin = request.headers.get("origin", "*")
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(
         status_code=500,
         content={"detail": f"Internal Server Error: {str(exc)}"},
-        headers={
-            "Access-Control-Allow-Origin": origin if origin else "*",
-            "Access-Control-Allow-Credentials": "true",
-        }
+        headers=headers,
     )
 
 create_tables()
@@ -165,7 +168,12 @@ def _startup_warm_load():
             print("[Startup] Pre-warming existing model into RAM...")
             get_model()
             save_dataset_fingerprint(DATASET_DIR)
-            print("[Startup] AI model fully loaded and ready for instantaneous diagnosis!")
+            try:
+                from image_validator import get_mobilenet_validator
+                get_mobilenet_validator()
+            except Exception as v_err:
+                print(f"[Startup Validator] {v_err}")
+            print("[Startup] AI model and input-validator fully loaded and ready for instantaneous diagnosis!")
     threading.Thread(target=_warm, daemon=True).start()
 
 
@@ -356,6 +364,32 @@ async def diagnose(
 
         image_bytes = await file.read()
 
+        # ── 1. STRICT IMAGE VALIDATION & INPUT-GATING LAYER ────────────
+        from image_validator import validate_skin_lesion_image
+        validation_result = validate_skin_lesion_image(image_bytes)
+
+        # Detailed logging as requested
+        print("\n" + "=" * 60)
+        print(" 🛡️ [DERMAI INPUT-GATING] IMAGE VALIDATION REPORT")
+        print("=" * 60)
+        print(f"Validation Status:     {'SUITABLE / ACCEPTED' if validation_result.is_suitable else 'UNSUITABLE / REJECTED'}")
+        print(f"Validation Confidence: {validation_result.confidence * 100:.1f}%")
+        print(f"Rejection Reason:      {validation_result.rejection_reason or 'None (Passed all validation checks)'}")
+        print(f"Error Code:            {validation_result.error_code or 'None'}")
+        print(f"Disease Model Called:  {'YES' if validation_result.is_suitable else 'NO (Bypassed for model safety)'}")
+        if validation_result.details:
+            print(f"Validation Details:    {validation_result.details}")
+        print("=" * 60 + "\n", flush=True)
+
+        # IMPORTANT MODEL SAFETY:
+        # The existing disease classifier must NOT be called when unsuitable
+        if not validation_result.is_suitable:
+            raise HTTPException(
+                status_code=400,
+                detail=validation_result.rejection_reason
+            )
+
+        # ── 2. PROCEED TO DISEASE CLASSIFICATION ONLY AFTER VALIDATION ──
         try:
             m, d, demo = get_model()
         except Exception:
@@ -382,9 +416,15 @@ async def diagnose(
         original_url, heatmap_url, saliency_url = await run_in_threadpool(_persist_images)
 
         payload = {
+            "validation": {
+                "status": "suitable",
+                "confidence": round(validation_result.confidence * 100, 1),
+                "details": validation_result.details,
+            },
             "prediction": result["prediction"],
             "confidence": result["confidence"],
             "top3": result["top3"],
+            "probabilities": result.get("probabilities", {}),
             "risk_level": result["risk_level"],
             "risk_severity": result.get("risk_severity"),
             "heatmap_url": heatmap_url,
@@ -491,3 +531,8 @@ def delete_history_item(scan_id: int, current_user: User = Depends(get_current_u
     db.delete(scan)
     db.commit()
     return {"message": "Deleted successfully"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
