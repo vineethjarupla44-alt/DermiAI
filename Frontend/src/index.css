@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-app: #070c14;
+  --bg-sidebar: #090e1c;
+  --bg-card: #0d1527;
+  --bg-card-subtle: #0a1122;
+  --border-card: #17233d;
+  --border-cyan-subtle: rgba(34, 211, 238, 0.16);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-cyan: #22d3ee;
+  --accent-blue: #38bdf8;
+  --accent-violet: #6366f1;
+}
+
+@layer base {
+  * {
+    border-color: #17233d;
+    box-sizing: border-box;
+  }
+
+  html {
+    background-color: var(--bg-app);
+    color: var(--text-main);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Custom sleek scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #070c14;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+}
+
+@layer components {
+  /* Cards matching reference screenshot */
+  .derm-card {
+    background-color: #0d1527;
+    border: 1px solid #17233d;
+    border-radius: 1.25rem;
+  }
+
+  .derm-card-subtle {
+    background-color: #0a1122;
+    border: 1px solid #17233d;
+    border-radius: 1rem;
+  }
+
+  .derm-card-glow {
+    background-color: #0d1527;
+    border: 1px solid rgba(34, 211, 238, 0.22);
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.08);
+    border-radius: 1.25rem;
+  }
+
+  /* Gradient Button matching screenshot: Cyan to Violet */
+  .btn-gradient {
+    background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%);
+    color: #ffffff;
+    font-weight: 600;
+    border-radius: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.25);
+  }
+
+  .btn-gradient:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+  }
+
+  .btn-gradient:active {
+    transform: translateY(0);
+  }
+
+  /* Solid cyan button */
+  .btn-cyan {
+    background-color: #22d3ee;
+    color: #081528;
+    font-weight: 600;
+    border-radius: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-cyan:hover {
+    background-color: #38bdf8;
+    transform: translateY(-1px);
+  }
+
+  /* Secondary dark button */
+  .btn-secondary {
+    background-color: #141f36;
+    border: 1px solid #223254;
+    color: #f1f5f9;
+    font-weight: 500;
+    border-radius: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-secondary:hover {
+    background-color: #1b2947;
+    border-color: #2e4370;
+    color: #ffffff;
+  }
+
+  /* Compatibility aliases for older pages */
+  .button-primary {
+    @apply btn-gradient;
+  }
+
+  .button-secondary {
+    @apply btn-secondary;
+  }
+
+  .panel {
+    @apply derm-card;
+  }
+
+  .panel-soft {
+    @apply derm-card-subtle;
+  }
+
+  .glass-panel {
+    @apply derm-card;
+  }
+
+  /* Cyan text gradient */
+  .text-gradient-cyan {
+    background: linear-gradient(135deg, #38bdf8 0%, #22d3ee 60%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Nav link active pill */
+  .nav-active {
+    background-color: rgba(6, 182, 212, 0.12);
+    color: #22d3ee;
+    border: 1px solid rgba(6, 182, 212, 0.28);
+    font-weight: 600;
+  }
+
+  .nav-inactive {
+    color: #94a3b8;
+    background-color: transparent;
+    border: 1px solid transparent;
+  }
+
+  .nav-inactive:hover {
+    color: #f8fafc;
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+}

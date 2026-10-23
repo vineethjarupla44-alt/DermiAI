@@ -1,0 +1,64 @@
+# Models
+*.h5
+*.keras
+*.pth
+*.pt
+*.ckpt
+*.onnx
+
+# Data
+dataset/
+data/
+train/
+val/
+test/
+images/
+
+# Checkpoints
+checkpoints/
+logs/
+runs/
+weights/
+
+# Python
+__pycache__/
+*.pyc
+
+# Notebook
+.ipynb_checkpoints/
+
+# Env
+venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+firebase-credentials.json
+firebase-service-account.json
+*firebase*.json
+*.sqlite
+*.sqlite3
+*.db
+kaggle.json
+files.txt
+
+# Backend specific
+Backend/static/uploads/*
+!Backend/static/uploads/.gitkeep
+Backend/static/outputs/*
+!Backend/static/outputs/.gitkeep
+Backend/static/saliency/*
+!Backend/static/saliency/.gitkeep
+Backend/skin_diagnosis.db
+Backend/.env
+
+# Node / Frontend
+node_modules/
+dist/
+.env*
+!.env.example
+!Backend/.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
