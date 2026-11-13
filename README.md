@@ -4,7 +4,7 @@ DermAI is a production-ready, full-stack medical AI application for skin lesion 
 
 [![Backend API](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi)](https://huggingface.co/spaces/ganirathod/dermai-backend)
 [![Model Weights](https://img.shields.io/badge/Model-HuggingFace-FFD21E?style=flat&logo=huggingface)](https://huggingface.co/spaces/ganirathod/dermai-backend)
-[![Frontend](https://img.shields.io/badge/Frontend-Vite%20%2B%20React-646CFF?style=flat&logo=vite)](https://dermai.vercel.app)
+![Frontend](https://img.shields.io/badge/Frontend-Vite%20%2B%20React-646CFF?style=flat&logo=vite)
 
 ---
 
@@ -234,7 +234,7 @@ The backend is designed to run in a Docker container (refer to `Backend/Dockerfi
     ```
 
 ### Frontend
-The frontend can be built and deployed on **Vercel** or any static hosting platform.
+The frontend can be built and deployed on any static hosting platform.
 ```bash
 npm run build
 ```
