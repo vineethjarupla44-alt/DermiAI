@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import api from '../api'
+import api, { API_BASE_URL } from '../api'
 import useStore from '../store/useStore'
 
 const STEPS = [
@@ -62,7 +62,7 @@ export default function Loading() {
           if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')) {
             detail = 'Analysis timed out. The model is warming up on CPU. Please try again.'
           } else if (err?.message === 'Network Error') {
-            detail = 'Cannot connect to backend server. Please verify backend is running on http://localhost:8000.'
+            detail = `Cannot connect to backend server. Please verify backend is running on ${API_BASE_URL}.`
           } else if (!detail) {
             detail = err?.message || 'Failed to process image. Please try again.'
           }

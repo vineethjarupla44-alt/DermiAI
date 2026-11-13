@@ -22,8 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 cred_path_or_json = os.getenv("FIREBASE_CREDENTIALS")
-if not cred_path_or_json and (BASE_DIR / "firebase-service-account.json").exists():
-    cred_path_or_json = str(BASE_DIR / "firebase-service-account.json")
+if not cred_path_or_json:
+    for candidate in [
+        BASE_DIR / "firebase-service-account.json",
+        BASE_DIR.parent / "DermiAI-main" / "Backend" / "firebase-service-account.json",
+    ]:
+        if candidate.exists():
+            cred_path_or_json = str(candidate)
+            break
 
 if not firebase_admin._apps:
     if cred_path_or_json:

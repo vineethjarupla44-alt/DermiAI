@@ -48,6 +48,7 @@ candidate_model_paths.extend([
     BASE_DIR.parent / "Training" / "my_dermiai_model.keras",
     BASE_DIR / "my_dermiai_model.keras",
     BASE_DIR / "best_final.keras",
+    BASE_DIR.parent / "DermiAI-main" / "Backend" / "best_final.keras",
     BASE_DIR.parent / "best_final.keras",
     BASE_DIR / "models" / "best_final.keras",
     Path("/tmp/best_final.keras"),
@@ -95,10 +96,20 @@ if frontend_origin:
         if o.strip():
             origins.add(o.strip())
 
+import socket
+try:
+    _hostname = socket.gethostname()
+    for _ip in socket.gethostbyname_ex(_hostname)[2]:
+        origins.add(f"http://{_ip}:5173")
+        origins.add(f"http://{_ip}:3000")
+        origins.add(f"http://{_ip}:8000")
+except Exception:
+    pass
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(origins),
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?|https://.*\.vercel\.app)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -356,7 +367,10 @@ async def diagnose(
     db: Session = Depends(get_db),
 ):
     try:
-        if file.content_type not in {"image/jpeg", "image/jpg", "image/png", "image/webp"}:
+        allowed_types = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+        filename = (file.filename or "").lower()
+        has_valid_ext = any(filename.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"])
+        if file.content_type not in allowed_types and not has_valid_ext:
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid file type {file.content_type}. Please upload a JPEG, PNG, or WEBP image.",
@@ -368,25 +382,39 @@ async def diagnose(
         from image_validator import validate_skin_lesion_image
         validation_result = validate_skin_lesion_image(image_bytes)
 
-        # Detailed logging as requested
-        print("\n" + "=" * 60)
+        # Detailed logging for diagnostic traceability
+        print("\n" + "=" * 65)
         print(" 🛡️ [DERMAI INPUT-GATING] IMAGE VALIDATION REPORT")
-        print("=" * 60)
+        print("=" * 65)
+        print(f"File Name:             {file.filename}")
+        print(f"File Size:             {len(image_bytes):,} bytes")
+        print(f"Content Type:          {file.content_type}")
         print(f"Validation Status:     {'SUITABLE / ACCEPTED' if validation_result.is_suitable else 'UNSUITABLE / REJECTED'}")
         print(f"Validation Confidence: {validation_result.confidence * 100:.1f}%")
         print(f"Rejection Reason:      {validation_result.rejection_reason or 'None (Passed all validation checks)'}")
         print(f"Error Code:            {validation_result.error_code or 'None'}")
+        if validation_result.details.get("detected_category") or validation_result.details.get("detected_object"):
+            print(f"Detected Object:       {validation_result.details.get('detected_object')} ({validation_result.details.get('detected_category')})")
         print(f"Disease Model Called:  {'YES' if validation_result.is_suitable else 'NO (Bypassed for model safety)'}")
         if validation_result.details:
             print(f"Validation Details:    {validation_result.details}")
-        print("=" * 60 + "\n", flush=True)
+        print("=" * 65 + "\n", flush=True)
 
         # IMPORTANT MODEL SAFETY:
-        # The existing disease classifier must NOT be called when unsuitable
+        # The existing disease classifier, Grad-CAM, saliency, and DB recording must NOT be called when unsuitable
         if not validation_result.is_suitable:
-            raise HTTPException(
+            error_code = validation_result.error_code or "NON_SKIN_IMAGE"
+            reason = validation_result.rejection_reason or "This image does not appear suitable for skin analysis. Please upload a clear close-up photograph of a skin lesion."
+            return JSONResponse(
                 status_code=400,
-                detail=validation_result.rejection_reason
+                content={
+                    "detail": reason,
+                    "message": reason,
+                    "error_type": error_code,
+                    "success": False,
+                    "confidence": validation_result.confidence,
+                    "details": validation_result.details
+                }
             )
 
         # ── 2. PROCEED TO DISEASE CLASSIFICATION ONLY AFTER VALIDATION ──

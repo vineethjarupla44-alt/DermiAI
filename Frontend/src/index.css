@@ -19,6 +19,21 @@
   --accent-violet: #6366f1;
 }
 
+html.light {
+  color-scheme: light;
+  --bg-app: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-subtle: #f1f5f9;
+  --border-card: #e2e8f0;
+  --border-cyan-subtle: rgba(8, 145, 178, 0.22);
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --accent-cyan: #0891b2;
+  --accent-blue: #0284c7;
+  --accent-violet: #6366f1;
+}
+
 @layer base {
   * {
     border-color: #17233d;
@@ -199,4 +214,379 @@
     color: #f8fafc;
     background-color: rgba(255, 255, 255, 0.04);
   }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LIGHT MODE SYSTEM & THEME OVERRIDES
+   Activates cleanly whenever <html class="light"> is present.
+   Preserves all layouts, padding, borders, typography, and button gradients.
+   ────────────────────────────────────────────────────────────────────────── */
+
+html.light {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* 1. Surfaces & Backgrounds across pages */
+html.light .bg-\[\#070c14\],
+html.light .bg-\[\#07111F\],
+html.light .bg-\[\#07111f\],
+html.light .bg-\[\#070c17\],
+html.light .bg-\[\#050811\] {
+  background-color: #f8fafc !important;
+}
+
+html.light .bg-\[\#090e1c\],
+html.light .bg-\[\#0B0F19\],
+html.light .bg-\[\#0b0f19\],
+html.light .bg-\[\#0a182b\],
+html.light .bg-\[\#080d1a\],
+html.light .bg-\[\#091122\] {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-\[\#0d1527\],
+html.light .bg-\[\#0a1122\],
+html.light .bg-\[\#0c162c\],
+html.light .bg-\[\#0e182f\],
+html.light .bg-\[\#101F31\],
+html.light .bg-\[\#101f31\],
+html.light .bg-\[\#0e1e3b\],
+html.light .bg-\[\#0d1527\]\/50,
+html.light .bg-\[\#0a1122\]\/50,
+html.light .bg-\[\#0e182f\]\/80,
+html.light .bg-\[\#101F31\]\/80,
+html.light .bg-\[\#101F31\]\/70,
+html.light .bg-\[\#101F31\]\/95 {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-\[\#070c14\]\/90,
+html.light .bg-\[\#07111F\]\/80,
+html.light .bg-\[\#0B0F19\]\/80 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html.light .bg-\[\#141f36\],
+html.light .bg-\[\#12203f\],
+html.light .bg-\[\#1c305c\],
+html.light .bg-\[\#131f38\],
+html.light .bg-\[\#152a42\] {
+  background-color: #f1f5f9 !important;
+}
+
+/* 2. Borders across cards, headers, tables, inputs */
+html.light .border-\[\#17233d\],
+html.light .border-\[\#15223c\],
+html.light .border-\[\#141f36\],
+html.light .border-\[\#172544\],
+html.light .border-\[\#1a2642\],
+html.light .border-\[\#16223d\],
+html.light .border-\[\#162544\],
+html.light .border-\[\#1c2c4d\],
+html.light .border-\[\#1b2b4b\],
+html.light .border-\[\#142338\],
+html.light .border-\[\#17283c\],
+html.light .border-\[\#1e3452\],
+html.light .border-\[\#1d2d4f\],
+html.light .border-\[\#15223c\]\/80,
+html.light .border-\[\#142338\]\/80,
+html.light .border-white\/10 {
+  border-color: #e2e8f0 !important;
+}
+
+/* 3. Reusable derm cards, panels, and subtle containers */
+html.light .derm-card,
+html.light .panel,
+html.light .glass-panel {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light .derm-card-subtle,
+html.light .panel-soft {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light .derm-card-glow {
+  background-color: #ffffff !important;
+  border-color: rgba(8, 145, 178, 0.28) !important;
+  box-shadow: 0 4px 20px -2px rgba(8, 145, 178, 0.1) !important;
+}
+
+html.light .btn-secondary {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+html.light .btn-secondary:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+html.light .nav-active {
+  background-color: rgba(8, 145, 178, 0.1) !important;
+  color: #0891b2 !important;
+  border-color: rgba(8, 145, 178, 0.3) !important;
+}
+
+html.light .nav-inactive {
+  color: #64748b !important;
+}
+
+html.light .nav-inactive:hover {
+  color: #0f172a !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 4. Text Contrast Overrides */
+html.light h1,
+html.light h2,
+html.light h3,
+html.light h4,
+html.light h5,
+html.light h6 {
+  color: #0f172a !important;
+}
+
+html.light .text-white {
+  color: #0f172a;
+}
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #1e293b;
+}
+html.light .text-slate-300 {
+  color: #334155;
+}
+html.light .text-slate-400 {
+  color: #64748b;
+}
+html.light .text-slate-500 {
+  color: #64748b;
+}
+
+/* Accessible cyan & blue for readable text on light backgrounds */
+html.light .text-cyan-400,
+html.light .text-cyan-300,
+html.light .text-\[\#22D3DD\] {
+  color: #0891b2 !important;
+}
+html.light .text-sky-300,
+html.light .text-sky-400 {
+  color: #0284c7 !important;
+}
+
+/* 5. PROTECTED WHITE TEXT: Buttons, Gradients, Badges, Overlays, and Dark Pills */
+html.light .btn-gradient,
+html.light .btn-gradient *,
+html.light .btn-cyan,
+html.light button.btn-gradient,
+html.light button.btn-gradient *,
+html.light a.btn-gradient,
+html.light a.btn-gradient *,
+html.light .bg-violet-600,
+html.light .bg-violet-600 *,
+html.light .bg-rose-500,
+html.light .bg-rose-500 *,
+html.light .bg-teal-500,
+html.light .bg-teal-500 *,
+html.light .bg-teal-400,
+html.light .bg-indigo-600,
+html.light .bg-indigo-600 *,
+html.light .bg-black\/60,
+html.light .bg-black\/60 *,
+html.light .bg-black\/75,
+html.light .bg-black\/80,
+html.light .bg-black\/80 *,
+html.light .bg-cyan-500,
+html.light .bg-cyan-500 *,
+html.light [class*="bg-gradient-to"] button,
+html.light [class*="bg-gradient-to"] a,
+html.light #hero-get-started-btn,
+html.light #hero-get-started-btn * {
+  color: #ffffff !important;
+}
+
+/* 6. Form Controls, Inputs, Dropdowns & Textareas */
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+html.light input:focus,
+html.light select:focus,
+html.light textarea:focus {
+  border-color: #0891b2 !important;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2) !important;
+}
+
+/* 7. Tables (Scan History & Diagnostics) */
+html.light thead tr {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+html.light thead th {
+  color: #475569 !important;
+}
+html.light tbody tr {
+  border-color: #f1f5f9 !important;
+}
+html.light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* 8. Dashboard Specific Cards */
+html.light .rounded-3xl.bg-gradient-to-br.from-\[\#0c162c\] {
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 50%, #f0fdfa 100%) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03) !important;
+}
+
+html.light .rounded-2xl.bg-\[\#0e182f\]\/80 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light .from-cyan-900\/40.via-\[\#0e1e3b\] {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, #ffffff 50%, rgba(99, 102, 241, 0.12) 100%) !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+  box-shadow: 0 0 35px rgba(6, 182, 212, 0.15) !important;
+}
+
+/* 9. Sidebar Navigation & Theme Pill */
+html.light aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light aside nav a:not([class*="bg-cyan-500"]) {
+  color: #64748b !important;
+}
+
+html.light aside nav a:not([class*="bg-cyan-500"]):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.light aside nav a[class*="bg-cyan-500"] {
+  background-color: rgba(6, 182, 212, 0.1) !important;
+  border-color: rgba(8, 145, 178, 0.3) !important;
+  color: #0891b2 !important;
+}
+
+html.light aside .derm-theme-pill {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+html.light aside .bg-\[\#0d1527\] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light aside .bg-\[\#0d1527\]:hover {
+  border-color: rgba(6, 182, 212, 0.4) !important;
+}
+
+/* 10. Success and Disclaimer Banners */
+html.light .bg-teal-950\/25 {
+  background-color: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+}
+html.light .bg-teal-950\/25 h2 {
+  color: #0f766e !important;
+}
+html.light .bg-teal-950\/25 p {
+  color: #115e59 !important;
+}
+
+html.light .bg-\[\#091122\].border-\[\#162544\] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* 11. Subtle Ambient Lights */
+html.light .pointer-events-none.rounded-full[class*="blur-"],
+html.light .pointer-events-none[class*="blur-"] {
+  opacity: 0.35 !important;
+}
+
+/* 12. Sleek Light Scrollbars */
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 9999px;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+/* 13. Additional UI controls, OAuth buttons, Steppers & Rings in Light Mode */
+html.light .bg-\[\#111c33\] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+html.light .bg-\[\#111c33\]:hover {
+  background-color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+html.light .border-\[\#1e2f55\] {
+  border-color: #cbd5e1 !important;
+}
+
+html.light .bg-\[\#1e2e4f\] {
+  background-color: #e2e8f0 !important;
+}
+html.light .border-\[\#182645\],
+html.light .border-\[\#22355b\],
+html.light .border-\[\#1e2f50\] {
+  border-color: #cbd5e1 !important;
+}
+
+html.light .ring-\[\#070c14\],
+html.light .ring-\[\#0a1122\],
+html.light .ring-\[\#090e1c\] {
+  --tw-ring-color: #ffffff !important;
+}
+
+html.light input.bg-white\/5,
+html.light textarea.bg-white\/5 {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html.light input.bg-white\/5:focus,
+html.light textarea.bg-white\/5:focus {
+  background-color: #ffffff !important;
+  border-color: #0891b2 !important;
+}
+
+html.light .h-2.rounded-full.bg-white\/5 {
+  background-color: #e2e8f0 !important;
+}
+
+html.light .panel-soft .rounded-2xl.bg-gradient-to-br p {
+  color: #0f172a !important;
 }

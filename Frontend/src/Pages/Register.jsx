@@ -92,6 +92,7 @@ export default function Register() {
     setLoading(true)
     try {
       const provider = new GoogleAuthProvider()
+      provider.setCustomParameters({ prompt: 'select_account' })
       const result = await signInWithPopup(auth, provider)
       const token = await result.user.getIdToken()
       await syncWithBackend(token, {
@@ -102,7 +103,18 @@ export default function Register() {
       navigate('/dashboard', { replace: true })
     } catch (err) {
       console.error(err)
-      setError(err?.message || 'Google Sign-In failed. Please try again.')
+      if (err?.code === 'auth/unauthorized-domain') {
+        const domain = window.location.hostname
+        setError(
+          `Domain "${domain}" is not authorized in Firebase Console. Please open http://localhost:5173 or add "${domain}" to Authorized Domains in Firebase Console > Authentication > Settings.`
+        )
+      } else if (err?.code === 'auth/popup-closed-by-user') {
+        setError('Google Sign-In was closed before completing. Please try again.')
+      } else if (err?.code === 'auth/popup-blocked') {
+        setError('Sign-in popup was blocked by your browser. Please allow popups for this site.')
+      } else {
+        setError(err?.message || 'Google Sign-In failed. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

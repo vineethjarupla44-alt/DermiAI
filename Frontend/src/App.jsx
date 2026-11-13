@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import useStore, { applyThemeToDom } from './store/useStore'
 
 // Pages
 import Login from './Pages/Login'
@@ -16,6 +18,12 @@ import Loading from './Pages/Loading'
 import Profile from './Pages/Profile'
 
 export default function App() {
+  const theme = useStore((s) => s.theme)
+
+  useEffect(() => {
+    applyThemeToDom(theme || 'dark')
+  }, [theme])
+
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>

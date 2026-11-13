@@ -36,54 +36,20 @@ export default function Scan() {
     }
   }, [previewUrl])
 
-  function compressImageForUpload(file, maxDimension = 1200) {
-    return new Promise((resolve) => {
-      if (!file || file.size < 400 * 1024) {
-        resolve(file)
-        return
-      }
-      const img = new Image()
-      img.onload = () => {
-        let { width, height } = img
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width)
-            width = maxDimension
-          } else {
-            width = Math.round((width * maxDimension) / height)
-            height = maxDimension
-          }
-        }
-        const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, width, height)
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const cleanName = (file.name || 'scan').replace(/\.[^/.]+$/, '') + '.jpg'
-              resolve(new File([blob], cleanName, { type: 'image/jpeg' }))
-            } else {
-              resolve(file)
-            }
-          },
-          'image/jpeg',
-          0.92
-        )
-      }
-      img.onerror = () => resolve(file)
-      img.src = URL.createObjectURL(file)
-    })
-  }
-
   async function selectFile(file) {
-    if (!file || !ACCEPTED_TYPES.includes(file.type)) {
+    if (!file) return
+
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp']
+    const fileName = (file.name || '').toLowerCase()
+    const hasValidExt = validExtensions.some((ext) => fileName.endsWith(ext))
+    const hasValidMime = file.type && ACCEPTED_TYPES.includes(file.type.toLowerCase())
+
+    if (!hasValidMime && !hasValidExt) {
       setError('Please choose a valid JPEG, PNG, or WEBP image.')
       return
     }
 
-    if (file.size < 500) {
+    if (file.size < 100) {
       setError('The selected file appears to be empty or corrupted.')
       return
     }
@@ -94,20 +60,36 @@ export default function Scan() {
       URL.revokeObjectURL(previewUrl)
     }
 
-    let processedFile = file
-    try {
-      if (file.size > 400 * 1024) {
-        processedFile = await compressImageForUpload(file)
-      }
-    } catch (_e) {
-      processedFile = file
-    }
+    // Preserve the original, authentic File object without lossy canvas compression
+    const objectUrl = URL.createObjectURL(file)
 
-    const localUrl = URL.createObjectURL(processedFile)
-    setPreviewUrl(localUrl)
-    setSelectedFile(processedFile)
-    setSelectedImage({ file: processedFile, previewUrl: localUrl, capturedAt: new Date().toISOString() })
-    setError('')
+    // Intrinsic resolution check using natural dimensions
+    const img = new Image()
+    img.onload = () => {
+      const w = img.naturalWidth
+      const h = img.naturalHeight
+
+      // Enforce minimum resolution requirement (at least 25,000 pixels, e.g. 200×200 or 265×148)
+      if (!w || !h || Math.max(w, h) < 180 || Math.min(w, h) < 100 || (w * h) < 25000) {
+        URL.revokeObjectURL(objectUrl)
+        setError('Image resolution is too low. Please upload a clear photo of at least 25,000 pixels (e.g. 200×200 or 265×148).')
+        setSelectedFile(null)
+        setPreviewUrl('')
+        return
+      }
+
+      setPreviewUrl(objectUrl)
+      setSelectedFile(file)
+      setSelectedImage({ file, previewUrl: objectUrl, capturedAt: new Date().toISOString() })
+      setError('')
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      setError('The selected file could not be read or is corrupted. Please upload a valid JPEG, PNG, or WEBP image.')
+      setSelectedFile(null)
+      setPreviewUrl('')
+    }
+    img.src = objectUrl
   }
 
   async function openCamera() {
@@ -173,6 +155,73 @@ export default function Scan() {
     }
   }
 
+  const getErrorDetails = (err) => {
+    if (!err) return { title: 'Image Validation Error', message: '' }
+    const lower = err.toLowerCase()
+
+    if (lower.includes('resolution') || lower.includes('low resolution') || lower.includes('pixels') || lower.includes('200×200') || lower.includes('200x200')) {
+      return {
+        title: 'Image Resolution Too Low',
+        message: err,
+        code: 'LOW_RESOLUTION',
+      }
+    }
+    if (lower.includes('format') || lower.includes('jpeg') || lower.includes('png') || lower.includes('file type')) {
+      return {
+        title: 'Unsupported File Format',
+        message: err,
+        code: 'INVALID_FORMAT',
+      }
+    }
+    if (lower.includes('corrupt') || lower.includes('empty file') || lower.includes('could not be read')) {
+      return {
+        title: 'Corrupted or Empty File',
+        message: err,
+        code: 'CORRUPT_FILE',
+      }
+    }
+    if (lower.includes('blurry') || lower.includes('blur') || lower.includes('focus')) {
+      return {
+        title: 'Image Too Blurry',
+        message: err,
+        code: 'BLURRY_IMAGE',
+      }
+    }
+    if (lower.includes('dark') || lower.includes('bright') || lower.includes('glare') || lower.includes('contrast') || lower.includes('exposed')) {
+      return {
+        title: 'Lighting & Exposure Issue',
+        message: err,
+        code: 'LIGHTING_ISSUE',
+      }
+    }
+    if (lower.includes('portrait') || lower.includes('face') || lower.includes('body') || lower.includes('people')) {
+      return {
+        title: 'Portrait or Body Photo Detected',
+        message: err,
+        code: 'PORTRAIT_DETECTED',
+      }
+    }
+    if (lower.includes('detected') || lower.includes('non-skin') || lower.includes('not appear to be a skin')) {
+      return {
+        title: 'Non-Skin Content Detected',
+        message: err,
+        code: 'NON_SKIN',
+      }
+    }
+    if (lower.includes('connect') || lower.includes('backend') || lower.includes('server') || lower.includes('timeout')) {
+      return {
+        title: 'Backend Server Connection Error',
+        message: err,
+        code: 'SERVER_ERROR',
+      }
+    }
+    return {
+      title: 'Image Validation Notice',
+      message: err,
+      code: 'VALIDATION_NOTICE',
+    }
+  }
+
   const handleClearPreview = () => {
     clearSelectedImage()
     if (previewUrl && previewUrl.startsWith('blob:')) {
@@ -200,7 +249,7 @@ export default function Scan() {
   // Image validation checklist items
   const validationChecks = [
     'File type supported (JPG/PNG/WEBP)',
-    'Image resolution is sufficient (min 224×224)',
+    'Image resolution is sufficient (at least 25,000 pixels, e.g. 200×200 or 265×148)',
     'Image is clear and not blurry',
     'Skin/lesion region detected',
     'Suitable for skin analysis',
@@ -489,42 +538,43 @@ export default function Scan() {
 
         {/* REJECTION ALERT BOX (Shown when error or rejected image is flagged) */}
         <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="rounded-2xl bg-rose-950/30 border border-rose-500/40 p-4 sm:p-5 flex items-center justify-between gap-4 shadow-xl"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-9 h-9 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 shadow-md shadow-rose-500/30">
-                  ✕
+          {error && (() => {
+            const errorInfo = getErrorDetails(error)
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="rounded-2xl bg-rose-950/30 border border-rose-500/40 p-4 sm:p-5 flex items-center justify-between gap-4 shadow-xl"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-9 h-9 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 shadow-md shadow-rose-500/30">
+                    ✕
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-rose-400 tracking-tight">
+                      {errorInfo.title}
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      {errorInfo.message}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-rose-400 tracking-tight">
-                    Image not suitable for skin analysis
-                  </h4>
-                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                    {error.includes('suitable') || error.includes('lesion') || error.includes('skin')
-                      ? error
-                      : 'This image does not appear to be a clear close-up of a skin lesion. Please upload a close-up image of the affected skin area.'}
-                  </p>
-                </div>
-              </div>
 
-              {/* Mini thumbnail of rejected image */}
-              <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-rose-500/50 shrink-0 bg-black/50">
-                <img
-                  src={rejectedImageThumbnail || '/samples/rejected_landscape.jpg'}
-                  alt="rejected"
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  ✕
-                </span>
-              </div>
-            </motion.div>
-          )}
+                {/* Mini thumbnail of rejected image */}
+                <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-rose-500/50 shrink-0 bg-black/50">
+                  <img
+                    src={rejectedImageThumbnail || '/samples/rejected_landscape.jpg'}
+                    alt="rejected"
+                    className="w-full h-full object-cover"
+                  />
+                  <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    ✕
+                  </span>
+                </div>
+              </motion.div>
+            )
+          })()}
         </AnimatePresence>
       </div>
     </AppShell>

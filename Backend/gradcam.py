@@ -97,8 +97,23 @@ def load_model(model_path: str | Path) -> tuple[tf.keras.Model, str, bool]:
 
 
 def _preprocess_for_model(img_rgb_uint8: np.ndarray) -> np.ndarray:
-    img = cv2.resize(img_rgb_uint8, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA).astype(np.float32)
-    img = img / 255.0
+    h, w = img_rgb_uint8.shape[:2]
+    if h == w:
+        resized = cv2.resize(img_rgb_uint8, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA)
+    else:
+        # Scale while preserving aspect ratio to prevent distorting lesion features
+        scale = min(IMG_SIZE / h, IMG_SIZE / w)
+        new_w = max(int(round(w * scale)), 1)
+        new_h = max(int(round(h * scale)), 1)
+        scaled = cv2.resize(img_rgb_uint8, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+        top = (IMG_SIZE - new_h) // 2
+        bottom = IMG_SIZE - new_h - top
+        left = (IMG_SIZE - new_w) // 2
+        right = IMG_SIZE - new_w - left
+        resized = cv2.copyMakeBorder(scaled, top, bottom, left, right, cv2.BORDER_REFLECT_101)
+
+    img = resized.astype(np.float32) / 255.0
     return img
 
 
@@ -118,7 +133,8 @@ def _scaled_probs(probs: np.ndarray, class_scales: np.ndarray) -> np.ndarray:
 def predict_probs_tta(model: tf.keras.Model, img_rgb_uint8: np.ndarray, class_scales: np.ndarray) -> np.ndarray:
     variants = _tta_variants(img_rgb_uint8)
     batch = np.stack([_preprocess_for_model(v) for v in variants], axis=0)
-    logits = model(batch, training=False).numpy()
+    model_inputs = [batch] if isinstance(model.inputs, (list, tuple)) else batch
+    logits = model(model_inputs, training=False).numpy()
     # Check if the model already outputs softmax probabilities (sums to 1.0, all positive)
     is_prob = np.allclose(np.sum(logits, axis=-1), 1.0, atol=1e-4) and np.all(logits >= -1e-5)
     if is_prob:
@@ -176,7 +192,8 @@ def _get_base_and_head(model: tf.keras.Model, last_conv_layer_name: str):
         for idx, layer in enumerate(model.layers):
             if isinstance(layer, tf.keras.Model):
                 # Submodel found (e.g. EfficientNetV2 backbone)
-                base_m = tf.keras.Model(model.inputs, layer(model.inputs))
+                base_in = model.inputs[0] if isinstance(model.inputs, (list, tuple)) and len(model.inputs) == 1 else model.inputs
+                base_m = tf.keras.Model(model.inputs, layer(base_in))
                 head_in = tf.keras.layers.Input(shape=layer.output_shape[1:])
                 x = head_in
                 for post_l in model.layers[idx + 1:]:
@@ -197,7 +214,9 @@ def _get_compiled_feature_fn(base_m: tf.keras.Model):
     if _compiled_feat_fn is None:
         @tf.function
         def _feat_fn(x):
-            return base_m(x, training=False)
+            if isinstance(x, (list, tuple)):
+                return base_m(x, training=False)
+            return base_m([x], training=False)
         _compiled_feat_fn = _feat_fn
     return _compiled_feat_fn
 
@@ -287,8 +306,18 @@ def run_inference(
         vis_w, vis_h = w, h
         vis_np = original_np
 
-    # 5. Fast Grad-CAM heatmap overlay
-    resized_cam = cv2.resize(cam, (vis_w, vis_h))
+    # 5. Fast Grad-CAM heatmap overlay (aspect-ratio aligned without feature distortion)
+    if h != w:
+        scale_pad = min(IMG_SIZE / h, IMG_SIZE / w)
+        pad_w = max(int(round(w * scale_pad)), 1)
+        pad_h = max(int(round(h * scale_pad)), 1)
+        top = (IMG_SIZE - pad_h) // 2
+        left = (IMG_SIZE - pad_w) // 2
+        cam_full = cv2.resize(cam, (IMG_SIZE, IMG_SIZE))
+        cam_cropped = cam_full[top:top+pad_h, left:left+pad_w]
+        resized_cam = cv2.resize(cam_cropped, (vis_w, vis_h))
+    else:
+        resized_cam = cv2.resize(cam, (vis_w, vis_h))
     colored_cam = cv2.applyColorMap(np.uint8(resized_cam * 255), cv2.COLORMAP_JET)
     colored_cam = cv2.cvtColor(colored_cam, cv2.COLOR_BGR2RGB)
     heatmap_overlay = np.clip((0.45 * colored_cam) + (0.55 * vis_np), 0, 255).astype("uint8")

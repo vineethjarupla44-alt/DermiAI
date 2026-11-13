@@ -37,6 +37,8 @@ CLASS_NAMES = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
 NUM_CLASSES = len(CLASS_NAMES)
 BASE_DIR = Path(__file__).resolve().parent
 DATASET_DIR = BASE_DIR / "dataset"
+if not DATASET_DIR.exists() and (BASE_DIR.parent / "DermiAI-main" / "Backend" / "dataset").exists():
+    DATASET_DIR = BASE_DIR.parent / "DermiAI-main" / "Backend" / "dataset"
 FINGERPRINT_FILE = BASE_DIR / "dataset_fingerprint.json"
 
 
@@ -421,7 +423,8 @@ def evaluate_model_comprehensive(model: tf.keras.Model, raw_val_ds: tf.data.Data
 
     for batch_x, batch_y in raw_val_ds:
         processed_x = tf.keras.applications.efficientnet_v2.preprocess_input(batch_x)
-        preds = model(processed_x, training=False).numpy()
+        model_in = [processed_x] if isinstance(model.inputs, (list, tuple)) else processed_x
+        preds = model(model_in, training=False).numpy()
 
         y_true_batch = np.argmax(batch_y.numpy(), axis=1)
         y_pred_batch = np.argmax(preds, axis=1)
